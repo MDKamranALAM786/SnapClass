@@ -24,8 +24,8 @@ def teacher_page() :
         register_screen()
 
 def login_screen() :
+    # login header
     st.header("Login using password", text_alignment="center")
-
     st.space()
     st.space()
 
@@ -35,9 +35,9 @@ def login_screen() :
     st.divider()
 
     btn1, btn2 = st.columns(2)
-    with btn1 :
+    with btn1 :   # login button
         st.button("Login", icon=":material/passkey:", shortcut="control+enter", width="stretch")
-    with btn2 :
+    with btn2 :   # go to register button
         if st.button("Register Instead", type="primary", icon=":material/passkey:", width="stretch") :
             st.session_state["teacher_auth_type"] = "register"
             st.rerun()
@@ -57,9 +57,9 @@ def register_screen() :
     st.divider()
 
     btn1, btn2 = st.columns(2)
-    with btn1 :
+    with btn1 :   # register button
         st.button("Register", icon=":material/passkey:", shortcut="control+enter", width="stretch")
-    with btn2 :
+    with btn2 :   # go to login button
         if st.button("Login Instead", type="primary", icon=":material/passkey:", width="stretch") :
             st.session_state["teacher_auth_type"] = "login"
             st.rerun()
