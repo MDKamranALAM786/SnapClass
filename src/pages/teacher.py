@@ -21,10 +21,20 @@ def teacher_page() :
             st.rerun()
 
     # display login/register portal
-    if "teacher_auth_type" not in st.session_state or st.session_state["teacher_auth_type"] == "login" :
+    if "teacher_data" in st.session_state :
+        teacher_dashboard()
+    elif "teacher_auth_type" not in st.session_state or st.session_state["teacher_auth_type"] == "login" :
         login_screen()
     else :
         register_screen()
+
+def teacher_dashboard() :
+    teacher = st.session_state["teacher_data"]
+    name = teacher["name"]
+    username = teacher["username"]
+    st.header(f"""
+        Welcome {name}
+    """)
 
 def register_screen() :
     # register header
@@ -87,6 +97,7 @@ def login_screen() :
             if success :
                 st.toast(message)
                 time.sleep(2)
+                st.rerun()
             else :
                 st.error(message)
     with btn2 :   # go to register button
@@ -100,6 +111,10 @@ def login(username, password) :
 
     message, teacher = login_teacher(username, password)
     if teacher :
+        st.session_state["role"] = "teacher"
+        st.session_state["teacher_data"] = teacher
+        st.session_state["is_logged_in"] = True
+
         print(teacher)
         return True, message
     else :
