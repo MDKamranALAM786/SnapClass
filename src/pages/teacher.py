@@ -1,10 +1,10 @@
 import streamlit as st
 import time
 
-from src.components.home_header import header_dashboard
+from src.components.header import header_dashboard
 from src.ui.base_layout import style_background_dashboard, style_base_layout
 
-from src.db.controller import register_teacher, login_teacher
+from src.db.controllers.teacher import register_teacher, login_teacher
 
 def teacher_page() :
     # styles
