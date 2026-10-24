@@ -1,4 +1,4 @@
-from db.config.config import supabase
+from src.db.config.config import supabase
 import bcrypt
 
 def hash_password(password) :

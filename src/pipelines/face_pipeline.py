@@ -19,7 +19,7 @@ def get_face_embeddings(face_np) :
 
     encodings = []
     for face in faces :
-        shape = dlib_models[1](face_np, face, 1)
+        shape = dlib_models[1](face_np, face)
         face_encoding = dlib_models[2].compute_face_descriptor(face_np, shape, 1)
         encodings.append(np.array(face_encoding))
 
