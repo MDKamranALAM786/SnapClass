@@ -35,10 +35,11 @@ def get_trained_model() :
         return None
 
     for student in students :
-        embeddings = student["face_embeddings"]
+        embeddings = student["face_embedding"]
         id = student["student_id"]
         if embeddings :
-            X.append(embeddings)
+            # generated embeddings are np arrays ---> convert fetched user embedding list into np arrays for model training
+            X.append(np.array(embeddings))
             Y.append(id)
 
     if len(X) == 0 :
@@ -50,6 +51,7 @@ def get_trained_model() :
         model.fit(X, Y)
     except ValueError as err :
         print(err)
+        return None
 
     model_data = {
         "model" : model,
@@ -59,29 +61,36 @@ def get_trained_model() :
     return model_data
 
 def train_model() :
-    st.session_state.clear()
+    st.cache_resource.clear()
     model_data = get_trained_model()
     return bool(model_data)
 
 def predict_attendance(class_image_np, threshold=0.6) :
-    embeddings = get_face_embeddings(class_image_np)
-    model_data = get_trained_model()
-    if not model_data :
+    try :
+        embeddings = get_face_embeddings(class_image_np)
+        if len(embeddings) == 0 :
+            return None, None, 0
+
+        model_data = get_trained_model()
+        if not model_data :
+            return None, None, len(embeddings)
+
+        model = model_data["model"]
+        X = model_data["X"]
+        Y = model_data["Y"]
+        student_ids = sorted(list(set(Y)))
+
+        present_student = set()
+        for embedding in embeddings :
+            predicted_id = model.predict([embedding])[0] if len(student_ids) != 1 else student_ids[0]
+            student_embedding = X[Y.index(predicted_id)]
+
+            loss = np.linalg.norm(student_embedding - embedding)
+            if loss <= threshold :
+                present_student.add(predicted_id)
+
+        return present_student, student_ids, len(embeddings)
+    except Exception as err:
+        print("Error in predicting attendance :", err)
         return None, None, len(embeddings)
-
-    model = model_data["model"]
-    X = model_data["X"]
-    Y = model_data["Y"]
-    student_ids = sorted(list(set(Y)))
-
-    present_student = set()
-    for embedding in embeddings :
-        predicted_id = model.predict(embedding)
-        student_embedding = X[Y.index(predicted_id)]
-
-        loss = np.linalg.norm(student_embedding - embedding)
-        if loss <= threshold :
-            present_student.add(predicted_id)
-
-    return present_student, student_ids, len(embeddings)
 
