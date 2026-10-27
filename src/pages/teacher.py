@@ -88,7 +88,7 @@ def manage_subjects(teacher) :
         st.write("No subjects")
     else :
         for subject in subjects :
-            stats = [("Students", subject["total_students"]), ("Classes", subject["total_classes"])]
+            stats = [("👥", "Students", subject["total_students"]), ("🕰", "Classes", subject["total_classes"])]
 
             def share_btn() :
                 if st.button(f"Share Code : {subject["name"]}", key=f"share_{subject["subject_code"]}", icon=":material/share:") :
