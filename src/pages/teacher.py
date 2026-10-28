@@ -1,7 +1,7 @@
 import streamlit as st
 import time
 
-from src.components.dialogue import create_subject
+from src.components.dialogue import create_subject, share_subject
 from src.components.header import header_dashboard
 from src.components.subject_card import subject_card
 from src.ui.base_layout import style_background_dashboard, style_base_layout
@@ -85,14 +85,14 @@ def manage_subjects(teacher) :
     # List all subjects
     subjects = get_all_subjects(id)
     if not subjects :
-        st.write("No subjects")
+        st.info("No subjects. Create one")
     else :
         for subject in subjects :
             stats = [("👥", "Students", subject["total_students"]), ("🕰", "Classes", subject["total_classes"])]
 
             def share_btn() :
                 if st.button(f"Share Code : {subject["name"]}", key=f"share_{subject["subject_code"]}", icon=":material/share:") :
-                    print('share_subject(subject["name"], subject["subject_code"])')
+                    share_subject(subject["name"], subject["subject_code"])
                 st.space()
 
             subject_card(name=subject["name"], code=subject["subject_code"], section=subject["section"], stats=stats, footer_callback=share_btn)
