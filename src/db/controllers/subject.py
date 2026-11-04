@@ -18,7 +18,8 @@ def get_all_subjects(teacher_id) :
         print(subjects)
 
         for subject in subjects :
-            subject["total_students"] = subject.get("subjects_students", [{}])[0].get("count", 0) if subject.get("subject_students") else 0
+            total_students = subject["subject_students"][0].get("count", 0) if subject.get("subject_students") else 0
+            subject["total_students"] = total_students
 
             attendance = subject.get("attendance_logs", [])
             subject["total_classes"] = len(set(log["time"] for log in attendance))
