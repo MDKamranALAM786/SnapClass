@@ -1,5 +1,7 @@
 import streamlit as st
 
+from src.components.dialogue import auto_enrollment
+
 from src.pages.home import home_page
 from src.pages.teacher import teacher_page
 from src.pages.student import student_page
@@ -16,4 +18,14 @@ def main() :
         case None :
             home_page()
 
+    join_code = st.query_params.get("join-code")
+    if join_code :
+        if st.session_state["login_type"] != "student" :
+            st.session_state["login_type"] = "student"
+            st.rerun()
+
+        if st.session_state.get("is_logged_in") and st.session_state.get("role") == "student" :
+            auto_enrollment(join_code)
+
 main()
+

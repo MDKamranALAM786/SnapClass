@@ -31,3 +31,11 @@ def get_all_subjects(teacher_id) :
         print(f"Error in getting all subjects : {err}")
         return None
 
+def get_subject(subject_code) :
+    try :
+        response = supabase.table("subjects").select("subject_id, name, subject_code").eq("subject_code", subject_code).execute()
+        return response.data[0] if response.data else None
+    except Exception as err :
+        print("Error in getting subject :", err)
+        return None
+
