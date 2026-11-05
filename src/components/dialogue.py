@@ -31,7 +31,7 @@ def create_subject(id) :
 
 @st.dialog("Share Class Link")
 def share_subject(sub_name, sub_code) :
-    app_domain = st.secrets["APP_DOMAIN"]
+    app_domain = "snapclass-main.streamlit.app"
     url = f"{app_domain}/?join-code={sub_code}"
 
     st.header("Scan to Join")
