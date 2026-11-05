@@ -40,3 +40,19 @@ def get_subject(subject_code) :
         print("Error in getting subject :", err)
         return None
 
+def get_subject_enrolled_students(subject_id) :
+    try :
+        response = supabase.table("subject_students").select("*, students(*)").eq("subject_id", subject_id).execute()
+        return response.data
+    except Exception as err :
+        print("Error in getting subject's enrolled students :", err)
+        return None
+
+def upload_attendance(attendance_logs) :
+    try :
+        response = supabase.table("attendance_logs").insert(attendance_logs).execute()
+        return response.data
+    except Exception as err :
+        print("Error in uploading attendance :", err)
+        return None
+

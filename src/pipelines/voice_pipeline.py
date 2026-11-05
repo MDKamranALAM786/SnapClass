@@ -25,15 +25,21 @@ def get_voice_embeddings(audio_bytes) :
 
 def identify_speaker(embedding, student_dict, threshold=0.65) :
     try :
-        if not embedding or not student_dict :
+        if embedding is None or not student_dict :
             return None, -1
 
         best_id = None
         best_score = -1
 
+        embedding = np.asarray(embedding)
+
         # evaluate over every stud (id, embedding)
         for stud_id, stud_embedding in student_dict.items() :
-            if not stud_embedding :
+            if stud_embedding is None :
+                continue
+
+            stud_embedding = np.asarray(stud_embedding)
+            if stud_embedding.size == 0 :
                 continue
 
             # evaluate curr student embedding with given embedding
@@ -43,7 +49,7 @@ def identify_speaker(embedding, student_dict, threshold=0.65) :
                 best_id = stud_id
 
         # no student embedding matched
-        if not best_id or best_score > threshold :
+        if not best_id or best_score < threshold :
             return None, -1
 
         return best_id, best_score

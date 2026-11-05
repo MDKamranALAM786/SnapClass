@@ -1,13 +1,18 @@
-import streamlit as st
 import time
+import numpy as np
+import pandas as pd
+import streamlit as st
+from datetime import datetime
 
-from src.components.dialogue import create_subject, share_subject
+from src.components.dialogue import create_subject, share_subject, add_photos, show_attendance_results, voice_attendance
 from src.components.header import header_dashboard
 from src.components.subject_card import subject_card
 from src.ui.base_layout import style_background_dashboard, style_base_layout
 
 from src.db.controllers.teacher import register_teacher, login_teacher
-from src.db.controllers.subject import get_all_subjects
+from src.db.controllers.subject import get_all_subjects, get_subject_enrolled_students
+
+from src.pipelines.face_pipeline import predict_attendance
 
 def teacher_page() :
     # styles
@@ -70,7 +75,90 @@ def teacher_dashboard() :
         attendance_records(teacher)
 
 def take_attendance(teacher) :
+    teacher_id = teacher["teacher_id"]
     st.subheader("Take Attendance")
+
+    if "attendance_images" not in st.session_state :
+        st.session_state["attendance_images"] = []
+
+    subjects = get_all_subjects(teacher_id)
+    if not subjects :
+        st.warning("No Subjects Found!")
+        return
+
+    subject_options = {f"{subject["name"]} - {subject["subject_code"]}" : f"{subject["subject_id"]}" for subject in subjects}
+
+    col1, col2 = st.columns([3, 1], vertical_alignment="bottom")
+    with col1 :
+        selected_subject_label = st.selectbox("Select Subjects", options=list(subject_options.keys()))
+    with col2 :
+        if st.button("Add Photos", type="primary", width="stretch") :
+            add_photos()
+
+    st.divider()
+
+    selected_subject_id = subject_options[selected_subject_label]
+
+    if st.session_state.attendance_images :
+        st.header("Add Photos")
+
+        gallery_cols = st.columns(4)
+        for i, img in enumerate(st.session_state.attendance_images) :
+            with gallery_cols[i % 4] :
+                st.image(img, width="stretch", caption=f"Photo {i+1}")
+
+    c1, c2, c3 = st.columns(3)
+    with c1 :
+        if st.button("Clear all images", width="stretch", type="tertiary", icon=":material/delete:") :
+            st.session_state.attendance_images = []
+            st.rerun()
+    with c2 :
+        has_photos = bool(st.session_state.attendance_images)
+        if st.button("Run Face Analysis", width="stretch", type="secondary", icon=":material/analytics:", disabled=not has_photos) :
+            with st.spinner("Deep student photos...") :
+                print("\nScanning student photos")
+                detected_student_ids = {}
+
+                for i, img in enumerate(st.session_state.attendance_images) :
+                    img_np = np.array(img.convert("RGB"))
+                    present_student_ids, _, _ = predict_attendance(img_np)
+
+                    if present_student_ids :
+                        for i, student_id in enumerate(present_student_ids) :
+                            detected_student_ids.setdefault(student_id, []).append(f"Photo {i+1}")
+
+                enrolled_students = get_subject_enrolled_students(selected_subject_id)
+                if not enrolled_students :
+                    st.warning("No students are enrolled!")
+                else :
+                    results, attendance_to_log = [], []
+                    current_datetime = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
+                    for enrolled_student in enrolled_students :
+                        student = enrolled_student["students"]
+                        student_id = student["student_id"]
+
+                        photo_sources = detected_student_ids.get(student_id, [])
+                        is_present = len(photo_sources) != 0
+
+                        results.append({
+                            "Name" : student["name"],
+                            "ID" : student_id,
+                            "Sources" : ", ".join(photo_sources) if is_present else "-",
+                            "Status" : is_present
+                        })
+
+                        attendance_to_log.append({
+                            "subject_id" : selected_subject_id,
+                            "student_id" : student_id,
+                            "time" : current_datetime,
+                            "is_present" : is_present
+                        })
+
+                show_attendance_results(pd.DataFrame(results), attendance_to_log)
+    with c3 :
+        if st.button("Use Voice Attendance", type="primary", width="stretch", icon=":material/mic:") :
+            voice_attendance(selected_subject_id)
 
 def manage_subjects(teacher) :
     id = teacher["teacher_id"]
@@ -128,7 +216,7 @@ def register_screen() :
             success, message = register(name, username, password, pass_confirm)
             if success :
                 st.success(message)
-                time.sleep(2)
+                time.sleep(1)
                 st.session_state["teacher_auth_type"] = "login"
                 st.rerun()
             else :
@@ -178,7 +266,7 @@ def login_screen() :
             success, message = login(username, password)
             if success :
                 st.toast(message)
-                time.sleep(2)
+                time.sleep(1)
                 st.rerun()
             else :
                 st.error(message)
