@@ -56,3 +56,11 @@ def login_teacher(username, password) :
         print(err)
         return "Unexpected Error", None
 
+def get_attendance_for_teacher(teacher_id) :
+    try :
+        response = supabase.table("attendance_logs").select("*, subjects!inner(*)").eq("subjects.teacher_id", teacher_id).execute()
+        return response.data
+    except Exception as err :
+        print("Error in getting attendance for teacher :", err)
+        return None
+

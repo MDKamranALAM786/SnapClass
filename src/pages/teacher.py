@@ -9,7 +9,7 @@ from src.components.header import header_dashboard
 from src.components.subject_card import subject_card
 from src.ui.base_layout import style_background_dashboard, style_base_layout
 
-from src.db.controllers.teacher import register_teacher, login_teacher
+from src.db.controllers.teacher import register_teacher, login_teacher, get_attendance_for_teacher
 from src.db.controllers.subject import get_all_subjects, get_subject_enrolled_students
 
 from src.pipelines.face_pipeline import predict_attendance
@@ -187,6 +187,39 @@ def manage_subjects(teacher) :
 
 def attendance_records(teacher) :
     st.subheader("Attendance Records")
+
+    teacher_id = teacher["teacher_id"]
+    teacher_attendances = get_attendance_for_teacher(teacher_id)
+
+    if not teacher_attendances :
+        st.info("No records to show!")
+        return
+
+    data = []
+    for record in teacher_attendances :
+        timestamp = record["time"]
+
+        data.append({
+            "time_group" : timestamp.split(".")[0] if timestamp else None,
+            "Time" : datetime.fromisoformat(timestamp).strftime("%Y-%m-%d %I:%M %p") if timestamp else "N/A",
+            "Subject" : record["subjects"]["name"],
+            "Subject Code" : record["subjects"]["subject_code"],
+            "Is Present" : bool(record.get("is_present", False))
+        })
+
+    df = pd.DataFrame(data)
+    summary = (
+        df.groupby(["time_group", "Time", "Subject", "Subject Code"])
+        .agg(
+            Present_Count = ("Is Present", "sum"),
+            Total_Count = ("Is Present", "count")
+        ).reset_index()
+    )
+
+    summary["Attendance Stats"] = (summary["Present_Count"].astype("str") + " / " + summary["Total_Count"].astype("str"))
+
+    display_df = summary.sort_values(by="time_group", ascending=False)[["Time", "Subject", "Subject Code", "Attendance Stats"]]
+    st.dataframe(display_df, width="stretch", hide_index=True)
 
 def register_screen() :
     # header
